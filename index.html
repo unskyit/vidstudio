@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Browser Video Studio Pro</title>
-    <script src="https://unpkg.com/mp4box@0.5.2/dist/mp4box.all.min.js"></script>
-    <script src="https://unpkg.com/mp4-muxer@3.0.4/build/mp4-muxer.js"></script>
-    <script src="https://unpkg.com/webm-muxer@3.0.4/build/webm-muxer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mp4box@0.5.2/dist/mp4box.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mp4-muxer@5.0.2/build/mp4-muxer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/webm-muxer@5.0.2/build/webm-muxer.js"></script>
     
     <style>
         :root {
@@ -23,345 +23,86 @@
             --font-main: system-ui, -apple-system, sans-serif;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
             background-color: var(--bg-dark);
             color: var(--text-main);
             font-family: var(--font-main);
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            overflow: hidden; /* Desktop default, overridden for mobile */
+            display: flex; flex-direction: column;
+            height: 100vh; overflow: hidden;
         }
 
-        /* --- Header --- */
         header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.75rem 1.5rem;
-            background-color: var(--bg-panel);
-            border-bottom: 1px solid var(--border);
-            height: 60px;
-            flex-shrink: 0;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0.75rem 1.5rem; background-color: var(--bg-panel);
+            border-bottom: 1px solid var(--border); height: 60px; flex-shrink: 0;
         }
 
-        header h1 {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: var(--primary);
-            letter-spacing: 0.5px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+        header h1 { font-size: 1.25rem; font-weight: 600; color: var(--primary); letter-spacing: 0.5px; }
 
-        .header-controls {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-        }
+        .header-controls { display: flex; gap: 1rem; align-items: center; }
 
-        .sys-status {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
+        .sys-status { font-size: 0.85rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem; }
+        .sys-status span { color: var(--accent); font-weight: 600; }
 
-        .sys-status span {
-            color: var(--accent);
-            font-weight: 600;
-        }
+        .app-container { display: flex; flex: 1; overflow: hidden; }
 
-        /* --- Main Layout --- */
-        .app-container {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-        }
+        .panel { background-color: var(--bg-panel); display: flex; flex-direction: column; }
+        .left-panel { width: 320px; min-width: 320px; border-right: 1px solid var(--border); overflow-y: auto; }
+        .center-panel { flex: 1; display: flex; flex-direction: column; background-color: var(--bg-dark); position: relative; min-width: 0; }
+        .right-panel { width: 320px; min-width: 320px; border-left: 1px solid var(--border); overflow-y: auto; }
 
-        .panel {
-            background-color: var(--bg-panel);
-            display: flex;
-            flex-direction: column;
-        }
+        .tabs { display: flex; border-bottom: 1px solid var(--border); background-color: var(--bg-panel); flex-shrink: 0; }
+        .tab { flex: 1; padding: 1rem 0.2rem; text-align: center; cursor: pointer; font-size: 0.85rem; font-weight: 500; color: var(--text-muted); border-bottom: 2px solid transparent; transition: all 0.2s; }
+        .tab:hover { color: var(--text-main); background-color: var(--bg-hover); }
+        .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
 
-        .left-panel {
-            width: 320px;
-            min-width: 320px;
-            border-right: 1px solid var(--border);
-            overflow-y: auto;
-        }
+        .module-content { display: none; padding: 1.5rem; flex-direction: column; gap: 1.25rem; }
+        .module-content.active { display: flex; }
 
-        .center-panel {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background-color: var(--bg-dark);
-            position: relative;
-            min-width: 0; /* Prevents flex blowout */
-        }
+        .form-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        label { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
 
-        .right-panel {
-            width: 320px;
-            min-width: 320px;
-            border-left: 1px solid var(--border);
-            overflow-y: auto;
-        }
+        input[type="range"] { width: 100%; cursor: pointer; }
+        input[type="number"], input[type="text"], select { width: 100%; background-color: var(--bg-dark); border: 1px solid var(--border); color: var(--text-main); padding: 0.5rem; border-radius: 4px; font-size: 0.9rem; outline: none; }
+        input[type="number"]:focus, input[type="text"]:focus, select:focus { border-color: var(--primary); }
 
-        /* --- UI Elements --- */
-        .tabs {
-            display: flex;
-            border-bottom: 1px solid var(--border);
-            background-color: var(--bg-panel);
-            flex-shrink: 0;
-        }
+        button { background-color: var(--primary); color: white; border: none; padding: 0.75rem; border-radius: 4px; cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: background 0.2s; text-transform: uppercase; letter-spacing: 0.5px; width: 100%; }
+        button:hover { background-color: var(--primary-hover); }
+        button.danger { background-color: transparent; border: 1px solid var(--danger); color: var(--danger); width: auto; }
+        button.danger:hover { background-color: var(--danger); color: white; }
 
-        .tab {
-            flex: 1;
-            padding: 1rem 0.2rem;
-            text-align: center;
-            cursor: pointer;
-            font-size: 0.85rem;
-            font-weight: 500;
-            color: var(--text-muted);
-            border-bottom: 2px solid transparent;
-            transition: all 0.2s;
-        }
+        .file-drop { border: 2px dashed var(--border); border-radius: 8px; padding: 2rem 1rem; text-align: center; cursor: pointer; color: var(--text-muted); transition: all 0.2s; font-size: 0.9rem; }
+        .file-drop:hover { border-color: var(--primary); color: var(--primary); }
+        .file-drop input[type="file"] { display: none; }
 
-        .tab:hover {
-            color: var(--text-main);
-            background-color: var(--bg-hover);
-        }
+        .preview-container { flex: 1; display: flex; align-items: center; justify-content: center; padding: 1rem; background-image: linear-gradient(45deg, #1e1e1e 25%, transparent 25%), linear-gradient(-45deg, #1e1e1e 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #1e1e1e 75%), linear-gradient(-45deg, transparent 75%, #1e1e1e 75%); background-size: 20px 20px; background-position: 0 0, 0 10px, 10px -10px, -10px 0px; overflow: hidden; min-height: 300px; }
+        canvas#preview-canvas { max-width: 100%; max-height: 100%; object-fit: contain; background-color: transparent; box-shadow: 0 0 20px rgba(0,0,0,0.5); border: 1px solid var(--border); }
 
-        .tab.active {
-            color: var(--primary);
-            border-bottom-color: var(--primary);
-        }
+        .bottom-bar { height: 200px; background-color: var(--bg-panel); border-top: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; }
+        .progress-container { padding: 1rem; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 0.5rem; }
+        .progress-bar-bg { width: 100%; height: 8px; background-color: var(--bg-dark); border-radius: 4px; overflow: hidden; }
+        .progress-bar-fill { height: 100%; width: 0%; background-color: var(--accent); transition: width 0.1s linear; }
+        .progress-stats { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); }
 
-        .module-content {
-            display: none;
-            padding: 1.5rem;
-            flex-direction: column;
-            gap: 1.25rem;
-        }
-
-        .module-content.active {
-            display: flex;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        label {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        input[type="range"] {
-            width: 100%;
-            cursor: pointer;
-        }
-
-        input[type="number"], input[type="text"], select {
-            width: 100%;
-            background-color: var(--bg-dark);
-            border: 1px solid var(--border);
-            color: var(--text-main);
-            padding: 0.5rem;
-            border-radius: 4px;
-            font-size: 0.9rem;
-            outline: none;
-        }
-        
-        input[type="number"]:focus, input[type="text"]:focus, select:focus {
-            border-color: var(--primary);
-        }
-
-        button {
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            padding: 0.75rem;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            font-weight: 600;
-            transition: background 0.2s;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            width: 100%;
-        }
-
-        button:hover {
-            background-color: var(--primary-hover);
-        }
-
-        button.danger {
-            background-color: transparent;
-            border: 1px solid var(--danger);
-            color: var(--danger);
-            width: auto;
-        }
-
-        button.danger:hover {
-            background-color: var(--danger);
-            color: white;
-        }
-
-        .file-drop {
-            border: 2px dashed var(--border);
-            border-radius: 8px;
-            padding: 2rem 1rem;
-            text-align: center;
-            cursor: pointer;
-            color: var(--text-muted);
-            transition: all 0.2s;
-            font-size: 0.9rem;
-        }
-
-        .file-drop:hover {
-            border-color: var(--primary);
-            color: var(--primary);
-        }
-
-        .file-drop input[type="file"] {
-            display: none;
-        }
-
-        /* --- Preview Area --- */
-        .preview-container {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 1rem;
-            background-image: 
-                linear-gradient(45deg, #1e1e1e 25%, transparent 25%), 
-                linear-gradient(-45deg, #1e1e1e 25%, transparent 25%),
-                linear-gradient(45deg, transparent 75%, #1e1e1e 75%),
-                linear-gradient(-45deg, transparent 75%, #1e1e1e 75%);
-            background-size: 20px 20px;
-            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
-            overflow: hidden;
-            min-height: 300px;
-        }
-
-        canvas#preview-canvas {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-            background-color: transparent;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-            border: 1px solid var(--border);
-        }
-
-        /* --- Bottom Bar / Status --- */
-        .bottom-bar {
-            height: 200px;
-            background-color: var(--bg-panel);
-            border-top: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            flex-shrink: 0;
-        }
-
-        .progress-container {
-            padding: 1rem;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .progress-bar-bg {
-            width: 100%;
-            height: 8px;
-            background-color: var(--bg-dark);
-            border-radius: 4px;
-            overflow: hidden;
-        }
-
-        .progress-bar-fill {
-            height: 100%;
-            width: 0%;
-            background-color: var(--accent);
-            transition: width 0.1s linear;
-        }
-
-        .progress-stats {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.8rem;
-            color: var(--text-muted);
-        }
-
-        .log-panel {
-            flex: 1;
-            padding: 0.5rem 1rem;
-            overflow-y: auto;
-            font-family: monospace;
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            background-color: #050505;
-            word-wrap: break-word;
-        }
-        
+        .log-panel { flex: 1; padding: 0.5rem 1rem; overflow-y: auto; font-family: monospace; font-size: 0.75rem; color: var(--text-muted); background-color: #050505; word-wrap: break-word; }
         .log-entry { margin-bottom: 4px; line-height: 1.4; border-bottom: 1px solid #1a1a1a; padding-bottom: 4px;}
         .log-entry.error { color: var(--danger); font-weight: bold; }
         .log-entry.success { color: var(--accent); }
         .log-entry.info { color: var(--primary); }
         .log-entry.warning { color: #f59e0b; }
 
-        .section-title {
-            font-size: 1rem;
-            color: var(--text-main);
-            margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 1px solid var(--border);
-        }
+        .section-title { font-size: 1rem; color: var(--text-main); margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
 
-        /* --- Responsive Mobile Layout --- */
         @media (max-width: 900px) {
-            body {
-                overflow-y: auto; /* Let the entire page scroll on mobile */
-            }
-            .app-container {
-                flex-direction: column;
-                height: auto;
-                overflow: visible;
-            }
-            .panel {
-                width: 100% !important;
-                min-width: 100% !important;
-                border-left: none !important;
-                border-right: none !important;
-                border-bottom: 2px solid var(--border);
-            }
-            .center-panel {
-                min-height: 60vh; /* Ensure preview has enough space on mobile */
-            }
-            header {
-                padding: 0.5rem 1rem;
-            }
-            header h1 {
-                font-size: 1.1rem;
-            }
+            body { overflow-y: auto; }
+            .app-container { flex-direction: column; height: auto; overflow: visible; }
+            .panel { width: 100% !important; min-width: 100% !important; border-left: none !important; border-right: none !important; border-bottom: 2px solid var(--border); }
+            .center-panel { min-height: 60vh; }
+            header { padding: 0.5rem 1rem; }
+            header h1 { font-size: 1.1rem; }
         }
-
     </style>
 </head>
 <body>
@@ -425,9 +166,6 @@
                     <label>SVG Source Status</label>
                     <input type="text" id="svg-status" readonly value="No file loaded">
                 </div>
-                <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;">
-                    SVGs are rendered sequentially. Inject CSS variables or JS attributes keyed to time for animation.
-                </p>
             </div>
 
             <div id="module-video" class="module-content">
@@ -466,7 +204,7 @@
                     </div>
                 </div>
                 <div class="log-panel" id="log-panel">
-                    <div class="log-entry info">System initialized. WebCodecs API supported.</div>
+                    <div class="log-entry info">System initialized. Awaiting user input.</div>
                 </div>
             </div>
         </div>
@@ -497,7 +235,6 @@
             <div class="form-group">
                 <label>Duration (Seconds)</label>
                 <input type="number" id="export-duration" min="1" max="3600" value="5">
-                <small style="font-size:0.7rem; color:var(--text-muted);">*Ignored for video transcode.</small>
             </div>
 
             <div class="form-group">
@@ -532,10 +269,6 @@
     </div>
 
     <script>
-        /**
-         * GLOBAL ERROR CAPTURE
-         * Connects raw browser errors and promise rejections to the visual UI panel.
-         */
         const Logger = {
             panel: document.getElementById('log-panel'),
             log(msg, type = 'info') {
@@ -543,642 +276,214 @@
                 div.className = `log-entry ${type}`;
                 const time = new Date().toISOString().substring(11, 19);
                 div.textContent = `[${time}] ${msg}`;
-                if (this.panel) {
-                    this.panel.appendChild(div);
-                    this.panel.scrollTop = this.panel.scrollHeight;
-                }
+                if (this.panel) { this.panel.appendChild(div); this.panel.scrollTop = this.panel.scrollHeight; }
             },
             error(msg) { this.log(msg, 'error'); console.error(msg); },
-            success(msg) { this.log(msg, 'success'); console.log(msg); },
-            info(msg) { this.log(msg, 'info'); console.log(msg); },
-            warn(msg) { this.log(msg, 'warning'); console.warn(msg); }
+            success(msg) { this.log(msg, 'success'); },
+            info(msg) { this.log(msg, 'info'); },
+            warn(msg) { this.log(msg, 'warning'); }
         };
 
-        window.addEventListener('error', function(event) {
-            Logger.error(`Runtime Error: ${event.message} at ${event.filename}:${event.lineno}`);
-        });
+        window.addEventListener('error', function(e) { Logger.error(`Error: ${e.message}`); });
+        window.addEventListener('unhandledrejection', function(e) { Logger.error(`Promise Error: ${e.reason}`); });
 
-        window.addEventListener('unhandledrejection', function(event) {
-            Logger.error(`Unhandled Promise Rejection: ${event.reason}`);
-        });
-
-        // Test WebCodecs Availability Immediately
-        if (typeof VideoEncoder === 'undefined' || typeof VideoDecoder === 'undefined') {
-            setTimeout(() => {
-                Logger.error("CRITICAL: WebCodecs API is not supported in this browser. Encoding/Decoding will fail. Please use a modern desktop browser (Chrome/Edge).");
-            }, 500);
+        if (typeof VideoEncoder === 'undefined') {
+            setTimeout(() => Logger.error("WebCodecs API not supported here. Use Chrome/Edge desktop."), 500);
         }
 
-        // --- CORE MATH ENGINE ---
         const MathEngine = {
-            prng(seed) {
-                let s = seed;
-                return function() {
-                    s = Math.sin(s) * 10000;
-                    return s - Math.floor(s);
-                };
-            },
-            
-            getColors(palette) {
-                const palettes = {
-                    neon: ['#ff00ff', '#00ffff', '#ff0055', '#5500ff'],
-                    fire: ['#ff4500', '#ff8c00', '#ffd700', '#8b0000'],
-                    ocean: ['#00bfff', '#1e90ff', '#00008b', '#20b2aa']
-                };
-                return palettes[palette] || palettes.neon;
-            },
-
-            drawSpirograph(ctx, width, height, time, config) {
-                const { complexity, symmetry, palette, seed } = config;
-                const colors = this.getColors(palette);
-                const rand = this.prng(seed);
-                
-                ctx.translate(width/2, height/2);
-                const maxR = Math.min(width, height) / 2.2;
-                
-                for(let s = 0; s < symmetry; s++) {
-                    ctx.save();
-                    ctx.rotate((Math.PI * 2 / symmetry) * s + time * 0.1);
-                    
+            prng(seed) { let s = seed; return () => { s = Math.sin(s) * 10000; return s - Math.floor(s); }; },
+            getColors(p) { const pals = { neon: ['#ff00ff', '#00ffff', '#ff0055', '#5500ff'], fire: ['#ff4500', '#ff8c00', '#ffd700', '#8b0000'], ocean: ['#00bfff', '#1e90ff', '#00008b', '#20b2aa'] }; return pals[p] || pals.neon; },
+            drawSpirograph(ctx, w, h, t, c) {
+                const colors = this.getColors(c.palette);
+                ctx.translate(w/2, h/2);
+                const maxR = Math.min(w, h) / 2.2;
+                for(let s = 0; s < c.symmetry; s++) {
+                    ctx.save(); ctx.rotate((Math.PI * 2 / c.symmetry) * s + t * 0.1);
                     ctx.beginPath();
-                    let R = maxR * 0.5 + Math.sin(time + s) * maxR * 0.2;
-                    let r = R * (0.1 * complexity);
-                    let d = r * 1.5;
-                    
-                    for(let theta = 0; theta < Math.PI * 20; theta += 0.05) {
-                        const x = (R - r) * Math.cos(theta) + d * Math.cos((R - r) * theta / r);
-                        const y = (R - r) * Math.sin(theta) - d * Math.sin((R - r) * theta / r);
-                        if(theta === 0) ctx.moveTo(x, y);
-                        else ctx.lineTo(x, y);
+                    let R = maxR * 0.5 + Math.sin(t + s) * maxR * 0.2, r = R * (0.1 * c.complexity), d = r * 1.5;
+                    for(let th = 0; th < Math.PI * 20; th += 0.05) {
+                        const x = (R - r) * Math.cos(th) + d * Math.cos((R - r) * th / r);
+                        const y = (R - r) * Math.sin(th) - d * Math.sin((R - r) * th / r);
+                        if(th === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
                     }
-                    
-                    ctx.strokeStyle = colors[s % colors.length];
-                    ctx.lineWidth = 2;
-                    ctx.globalAlpha = 0.7;
-                    ctx.stroke();
-                    ctx.restore();
+                    ctx.strokeStyle = colors[s % colors.length]; ctx.lineWidth = 2; ctx.globalAlpha = 0.7; ctx.stroke(); ctx.restore();
                 }
-                ctx.translate(-width/2, -height/2);
+                ctx.translate(-w/2, -h/2);
             },
-
-            drawWave(ctx, width, height, time, config) {
-                const { complexity, palette } = config;
-                const colors = this.getColors(palette);
-                
+            drawWave(ctx, w, h, t, c) {
+                const colors = this.getColors(c.palette);
                 ctx.fillStyle = colors[0];
-                for(let x = 0; x < width; x += 10) {
-                    for(let y = 0; y < height; y += 10) {
-                        let d1 = Math.hypot(x - width/3, y - height/3);
-                        let d2 = Math.hypot(x - 2*width/3, y - 2*height/3);
-                        let val = Math.sin(d1 * 0.05 - time*2) + Math.sin(d2 * 0.05 * (complexity/5) - time*3);
-                        
-                        if(val > 0.5) {
-                            ctx.fillStyle = colors[Math.floor(Math.abs(val)*colors.length) % colors.length];
-                            ctx.globalAlpha = val * 0.5;
-                            ctx.beginPath();
-                            ctx.arc(x, y, 4 * val, 0, Math.PI * 2);
-                            ctx.fill();
-                        }
+                for(let x = 0; x < w; x += 10) {
+                    for(let y = 0; y < h; y += 10) {
+                        let d1 = Math.hypot(x - w/3, y - h/3), d2 = Math.hypot(x - 2*w/3, y - 2*h/3);
+                        let val = Math.sin(d1 * 0.05 - t*2) + Math.sin(d2 * 0.05 * (c.complexity/5) - t*3);
+                        if(val > 0.5) { ctx.fillStyle = colors[Math.floor(Math.abs(val)*colors.length) % colors.length]; ctx.globalAlpha = val * 0.5; ctx.beginPath(); ctx.arc(x, y, 4 * val, 0, Math.PI * 2); ctx.fill(); }
                     }
                 }
                 ctx.globalAlpha = 1.0;
             },
-
-            drawParticles(ctx, width, height, time, config) {
-                const { complexity, symmetry, palette, seed } = config;
-                const colors = this.getColors(palette);
-                const rand = this.prng(seed);
-                
-                const numParticles = 100 * complexity;
-                for(let i = 0; i < numParticles; i++) {
-                    let startX = rand() * width;
-                    let startY = rand() * height;
-                    let speed = 50 + rand() * 100;
-                    let angle = rand() * Math.PI * 2 + (time * rand() * 0.5);
-                    
-                    let x = (startX + Math.cos(angle) * speed * time) % width;
-                    let y = (startY + Math.sin(angle) * speed * time) % height;
-                    if(x < 0) x += width;
-                    if(y < 0) y += height;
-                    
-                    ctx.fillStyle = colors[i % colors.length];
-                    ctx.beginPath();
-                    ctx.arc(x, y, 2 + rand()*4, 0, Math.PI*2);
-                    ctx.fill();
+            drawParticles(ctx, w, h, t, c) {
+                const colors = this.getColors(c.palette); const rand = this.prng(c.seed);
+                const num = 100 * c.complexity;
+                for(let i = 0; i < num; i++) {
+                    let sX = rand() * w, sY = rand() * h, spd = 50 + rand() * 100, ang = rand() * Math.PI * 2 + (t * rand() * 0.5);
+                    let x = (sX + Math.cos(ang) * spd * t) % w, y = (sY + Math.sin(ang) * spd * t) % h;
+                    if(x < 0) x += w; if(y < 0) y += h;
+                    ctx.fillStyle = colors[i % colors.length]; ctx.beginPath(); ctx.arc(x, y, 2 + rand()*4, 0, Math.PI*2); ctx.fill();
                 }
             },
-
-            drawFrame(ctx, width, height, time, config) {
-                if(config.alpha === 'discard') {
-                    ctx.fillStyle = '#000000';
-                    ctx.fillRect(0, 0, width, height);
-                } else {
-                    ctx.clearRect(0, 0, width, height);
-                }
-
-                if(config.pattern === 'spirograph') this.drawSpirograph(ctx, width, height, time, config);
-                else if(config.pattern === 'wave') this.drawWave(ctx, width, height, time, config);
-                else if(config.pattern === 'particles') this.drawParticles(ctx, width, height, time, config);
+            drawFrame(ctx, w, h, t, c) {
+                if(c.alpha === 'discard') { ctx.fillStyle = '#000000'; ctx.fillRect(0, 0, w, h); } else { ctx.clearRect(0, 0, w, h); }
+                if(c.pattern === 'spirograph') this.drawSpirograph(ctx, w, h, t, c); else if(c.pattern === 'wave') this.drawWave(ctx, w, h, t, c); else if(c.pattern === 'particles') this.drawParticles(ctx, w, h, t, c);
             }
         };
 
-        // --- SVG ENGINE ---
         const SVGEngine = {
-            svgString: null,
-            imgObj: new Image(),
-            
-            async load(file) {
-                const text = await file.text();
-                this.svgString = text;
-                Logger.info(`SVG Loaded: ${file.name}`);
-            },
-
-            async drawFrame(ctx, width, height, time) {
+            svgString: null, imgObj: new Image(),
+            async load(file) { this.svgString = await file.text(); Logger.info(`SVG Loaded: ${file.name}`); },
+            async drawFrame(ctx, w, h, t) {
                 if(!this.svgString) return;
-                let modSvg = this.svgString.replace('<svg ', `<svg style="--time:${time}s;" `);
-                
-                const blob = new Blob([modSvg], {type: 'image/svg+xml;charset=utf-8'});
-                const url = URL.createObjectURL(blob);
-                
+                let modSvg = this.svgString.replace('<svg ', `<svg style="--time:${t}s;" `);
+                const blob = new Blob([modSvg], {type: 'image/svg+xml;charset=utf-8'}); const url = URL.createObjectURL(blob);
                 return new Promise((resolve, reject) => {
-                    this.imgObj.onload = () => {
-                        ctx.clearRect(0, 0, width, height);
-                        ctx.drawImage(this.imgObj, 0, 0, width, height);
-                        URL.revokeObjectURL(url);
-                        resolve();
-                    };
-                    this.imgObj.onerror = (e) => {
-                        URL.revokeObjectURL(url);
-                        reject(new Error("Failed to render SVG image frame."));
-                    };
+                    this.imgObj.onload = () => { ctx.clearRect(0, 0, w, h); ctx.drawImage(this.imgObj, 0, 0, w, h); URL.revokeObjectURL(url); resolve(); };
+                    this.imgObj.onerror = () => { URL.revokeObjectURL(url); reject(new Error("SVG render failed.")); };
                     this.imgObj.src = url;
                 });
             }
         };
 
-        // --- VIDEO DEMUXING & DECODING ENGINE ---
         const VideoEngine = {
-            fileBuffer: null,
-            videoTrack: null,
-            decoder: null,
-            frameQueue: [], 
-            
-            async load(file) {
-                this.fileBuffer = await file.arrayBuffer();
-                Logger.info(`Video Loaded in memory: ${file.name} (${(this.fileBuffer.byteLength/1024/1024).toFixed(2)} MB)`);
-            },
-
-            async *extractFrames(targetWidth, targetHeight, scalingMode) {
+            fileBuffer: null, videoTrack: null, decoder: null, frameQueue: [],
+            async load(file) { this.fileBuffer = await file.arrayBuffer(); Logger.info(`Video Loaded: ${file.name}`); },
+            async *extractFrames(tW, tH, scale) {
                 if(!this.fileBuffer) throw new Error("No video buffer loaded.");
-                
-                if (typeof MP4Box === 'undefined') {
-                    throw new Error("mp4box.js library failed to load via CDN.");
-                }
-
-                Logger.info("Starting Demuxer...");
+                if (typeof MP4Box === 'undefined') throw new Error("MP4Box library missing.");
                 const mp4boxfile = MP4Box.createFile();
-                
-                let trackReady = false;
-                let errorOccurred = null;
-                
-                const yieldThread = () => new Promise(r => setTimeout(r, 0));
-
-                mp4boxfile.onReady = (info) => {
-                    this.videoTrack = info.videoTracks[0];
-                    if(!this.videoTrack) {
-                        errorOccurred = new Error("No video track found in file.");
-                        return;
-                    }
-                    Logger.info(`Track found: Codec ${this.videoTrack.codec}, ${this.videoTrack.video.width}x${this.videoTrack.video.height}`);
-                    mp4boxfile.setExtractionOptions(this.videoTrack.id);
-                    mp4boxfile.start();
-                    trackReady = true;
-                };
-
-                let sampleQueue = [];
-                mp4boxfile.onSamples = (id, user, samples) => {
-                    sampleQueue.push(...samples);
-                };
-
-                mp4boxfile.onError = (e) => {
-                    errorOccurred = new Error(`MP4Box Error: ${e}`);
-                }
-
-                mp4boxfile.appendBuffer(this.fileBuffer);
-                mp4boxfile.flush();
-
-                while(!trackReady && !errorOccurred) await yieldThread();
-                if(errorOccurred) throw errorOccurred;
-
-                let activeDecodes = 0;
+                let ready = false, err = null, sampleQ = [], active = 0;
+                mp4boxfile.onReady = (info) => { this.videoTrack = info.videoTracks[0]; if(!this.videoTrack){ err = new Error("No video track."); return; } mp4boxfile.setExtractionOptions(this.videoTrack.id); mp4boxfile.start(); ready = true; };
+                mp4boxfile.onSamples = (id, user, samples) => sampleQ.push(...samples);
+                mp4boxfile.onError = (e) => err = new Error(`MP4Box Error: ${e}`);
+                mp4boxfile.appendBuffer(this.fileBuffer); mp4boxfile.flush();
+                while(!ready && !err) await new Promise(r=>setTimeout(r,0)); if(err) throw err;
                 
                 this.decoder = new VideoDecoder({
-                    output: (frame) => {
-                        try {
-                            const canvas = new OffscreenCanvas(targetWidth, targetHeight);
-                            const ctx = canvas.getContext('2d');
-                            
-                            if (scalingMode === 'stretch') {
-                                ctx.drawImage(frame, 0, 0, targetWidth, targetHeight);
-                            } else {
-                                const aspectSrc = frame.displayWidth / frame.displayHeight;
-                                const aspectDst = targetWidth / targetHeight;
-                                let w, h, x, y;
-                                
-                                if (aspectSrc > aspectDst) {
-                                    w = targetWidth;
-                                    h = targetWidth / aspectSrc;
-                                    x = 0;
-                                    y = (targetHeight - h) / 2;
-                                } else {
-                                    h = targetHeight;
-                                    w = targetHeight * aspectSrc;
-                                    x = (targetWidth - w) / 2;
-                                    y = 0;
-                                }
-                                ctx.fillStyle = 'black';
-                                ctx.fillRect(0,0,targetWidth,targetHeight);
-                                ctx.drawImage(frame, x, y, w, h);
-                            }
-
-                            const processedFrame = new VideoFrame(canvas, { timestamp: frame.timestamp });
-                            this.frameQueue.push(processedFrame);
-                        } catch (e) {
-                            Logger.warn(`Frame processing dropped: ${e.message}`);
-                        } finally {
-                            frame.close(); 
-                            activeDecodes--;
+                    output: (f) => {
+                        const canvas = new OffscreenCanvas(tW, tH); const ctx = canvas.getContext('2d');
+                        if (scale === 'stretch') { ctx.drawImage(f, 0, 0, tW, tH); } 
+                        else {
+                            const aS = f.displayWidth / f.displayHeight, aD = tW / tH; let w, h, x, y;
+                            if (aS > aD) { w = tW; h = tW / aS; x = 0; y = (tH - h) / 2; } else { h = tH; w = tH * aS; x = (tW - w) / 2; y = 0; }
+                            ctx.fillStyle = 'black'; ctx.fillRect(0,0,tW,tH); ctx.drawImage(f, x, y, w, h);
                         }
+                        this.frameQueue.push(new VideoFrame(canvas, { timestamp: f.timestamp }));
+                        f.close(); active--;
                     },
-                    error: (e) => { errorOccurred = e; }
+                    error: (e) => err = e
                 });
-
-                const config = {
-                    codec: this.videoTrack.codec.startsWith('vp') ? 'vp09.00.10.08' : 'avc1.640028', 
-                    codedWidth: this.videoTrack.video.width,
-                    codedHeight: this.videoTrack.video.height,
-                    description: this.getExtradata(mp4boxfile)
-                };
                 
-                try {
-                    const support = await VideoDecoder.isConfigSupported(config);
-                    if(!support.supported) Logger.warn(`Decoder config might not be fully supported. Fallback activated.`);
-                    this.decoder.configure(config);
-                } catch(e) {
-                    Logger.warn(`Decoder config failed. Trying raw fallback.`);
-                    this.decoder.configure({ codec: 'avc1.640028', codedWidth: this.videoTrack.video.width, codedHeight: this.videoTrack.video.height });
-                }
+                try { this.decoder.configure({ codec: this.videoTrack.codec.startsWith('vp') ? 'vp09.00.10.08' : 'avc1.640028', codedWidth: this.videoTrack.video.width, codedHeight: this.videoTrack.video.height }); } 
+                catch(e) { this.decoder.configure({ codec: 'avc1.640028', codedWidth: this.videoTrack.video.width, codedHeight: this.videoTrack.video.height }); }
 
-                let sampleIndex = 0;
-                while (sampleIndex < sampleQueue.length || activeDecodes > 0 || this.frameQueue.length > 0) {
-                    if (errorOccurred) throw errorOccurred;
-
-                    while (sampleIndex < sampleQueue.length && activeDecodes < 10) { 
-                        const sample = sampleQueue[sampleIndex++];
-                        const chunk = new EncodedVideoChunk({
-                            type: sample.is_sync ? "key" : "delta",
-                            timestamp: (sample.cts * 1000000) / sample.timescale,
-                            duration: (sample.duration * 1000000) / sample.timescale,
-                            data: sample.data
-                        });
-                        activeDecodes++;
-                        this.decoder.decode(chunk);
+                let i = 0;
+                while (i < sampleQ.length || active > 0 || this.frameQueue.length > 0) {
+                    if (err) throw err;
+                    while (i < sampleQ.length && active < 10) { 
+                        const s = sampleQ[i++];
+                        this.decoder.decode(new EncodedVideoChunk({ type: s.is_sync ? "key" : "delta", timestamp: (s.cts * 1000000) / s.timescale, duration: (s.duration * 1000000) / s.timescale, data: s.data })); active++;
                     }
-
-                    if (this.frameQueue.length > 0) {
-                        const frame = this.frameQueue.shift();
-                        yield frame;
-                    } else {
-                        await yieldThread();
-                    }
+                    if (this.frameQueue.length > 0) yield this.frameQueue.shift(); else await new Promise(r=>setTimeout(r,0));
                 }
-                
-                await this.decoder.flush();
-                while (this.frameQueue.length > 0) {
-                    yield this.frameQueue.shift();
-                }
-                this.decoder.close();
-            },
-
-            getExtradata(mp4boxfile) {
-                try {
-                    const trak = mp4boxfile.moov.traks[0];
-                    const avcC = trak.mdia.minf.stbl.stsd.entries[0].avcC;
-                    if (avcC) {
-                        const stream = new MP4Box.DataStream(new ArrayBuffer(avcC.size), 0, MP4Box.DataStream.BIG_ENDIAN);
-                        avcC.write(stream);
-                        return new Uint8Array(stream.buffer, 8); 
-                    }
-                } catch(e) { return null; }
-                return null;
+                await this.decoder.flush(); while (this.frameQueue.length > 0) yield this.frameQueue.shift(); this.decoder.close();
             }
         };
 
-        // --- ENCODING PIPELINE ---
         const EncoderPipeline = {
-            async exportVideo(config, frameGenerator) {
-                const { width, height, fps, codec, bitrate, container, duration, mode, alpha } = config;
+            async exportVideo(c, gen) {
+                if (typeof Mp4Muxer === 'undefined' || typeof WebMMuxer === 'undefined') throw new Error("If you are running this via file:/// protocol, your browser's local security policy blocked the Muxer CDNs from loading. To fix: host it on GitHub Pages or use a local server like VSCode Live Server.");
+                const isMp4 = c.container === 'mp4';
+                let MuxerClass = isMp4 ? Mp4Muxer.Muxer : WebMMuxer.Muxer;
+                let ArrayTarget = isMp4 ? Mp4Muxer.ArrayBufferTarget : WebMMuxer.ArrayBufferTarget;
+                const buffer = new ArrayTarget();
+                const muxer = new MuxerClass({ target: buffer, video: { codec: isMp4 ? 'avc' : 'V_VP9', width: c.width, height: c.height }, fastStart: isMp4 ? 'in-memory' : false });
+                const encConfig = { codec: c.codec, width: c.width, height: c.height, bitrate: c.bitrate, framerate: c.fps, alpha: c.alpha, hardwareAcceleration: "prefer-hardware" };
+                const support = await VideoEncoder.isConfigSupported(encConfig);
+                if (!support.supported) throw new Error(`Codec config unsupported: ${c.codec}`);
                 
-                if (typeof Mp4Muxer === 'undefined' || typeof WebMMuxer === 'undefined') {
-                    throw new Error("Muxer library CDN failed to load.");
+                let encoded = 0, active = 0, encErr = null;
+                const encoder = new VideoEncoder({ output: (chunk, meta) => { muxer.addVideoChunk(chunk, meta); active--; }, error: e => encErr = new Error(e.message) });
+                encoder.configure(encConfig);
+                const total = c.duration * c.fps;
+                
+                for await (const frame of gen()) {
+                    if (encErr) throw encErr;
+                    while (active > 15) await new Promise(r => setTimeout(r, 0)); 
+                    encoder.encode(frame, { keyFrame: encoded % (c.fps * 2) === 0 });
+                    active++; encoded++; frame.close(); 
+                    StudioApp.updateProgress(c.mode === 'transcode' ? false : encoded / total);
+                    if(encoded % 10 === 0) await new Promise(r => setTimeout(r, 0)); 
                 }
-
-                let MuxerClass = container === 'mp4' ? Mp4Muxer.Muxer : WebMMuxer.Muxer;
-                let ArrayBufferTarget = container === 'mp4' ? Mp4Muxer.ArrayBufferTarget : WebMMuxer.ArrayBufferTarget;
-
-                const targetBuffer = new ArrayBufferTarget();
-                const muxer = new MuxerClass({
-                    target: targetBuffer,
-                    video: { codec: container === 'mp4' ? 'avc' : 'V_VP9', width, height },
-                    fastStart: container === 'mp4' ? 'in-memory' : false,
-                });
-
-                const encoderConfig = {
-                    codec: codec,
-                    width, height, bitrate,
-                    framerate: fps,
-                    alpha: alpha,
-                    hardwareAcceleration: "prefer-hardware"
-                };
-
-                const support = await VideoEncoder.isConfigSupported(encoderConfig);
-                if (!support.supported) throw new Error(`Codec configuration not supported by browser: ${codec}`);
-
-                let encodedFrames = 0;
-                let activeEncodes = 0;
-                let encoderError = null;
-                
-                const encoder = new VideoEncoder({
-                    output: (chunk, meta) => {
-                        muxer.addVideoChunk(chunk, meta);
-                        activeEncodes--;
-                    },
-                    error: e => { encoderError = new Error(`Encoder Output Error: ${e.message}`); }
-                });
-
-                encoder.configure(encoderConfig);
-                
-                const totalFrames = duration * fps;
-                Logger.info(`Encoding started: ${width}x${height} @ ${fps}fps. Target: ${container}`);
-
-                for await (const frame of frameGenerator()) {
-                    if (encoderError) throw encoderError;
-
-                    while (activeEncodes > 15) {
-                        await new Promise(r => setTimeout(r, 0)); 
-                    }
-                    
-                    encoder.encode(frame, { keyFrame: encodedFrames % (fps * 2) === 0 });
-                    activeEncodes++;
-                    encodedFrames++;
-                    frame.close(); 
-
-                    StudioApp.updateProgress(mode === 'transcode' ? false : encodedFrames / totalFrames);
-                    if(encodedFrames % 10 === 0) await new Promise(r => setTimeout(r, 0)); 
-                }
-
-                Logger.info("Flushing encoder...");
-                await encoder.flush();
-                muxer.finalize();
-                encoder.close();
-
-                Logger.success("Encoding complete. Triggering download.");
-                this.downloadBuffer(targetBuffer.buffer, `export_${Date.now()}.${container}`);
+                await encoder.flush(); muxer.finalize(); encoder.close();
+                this.downloadBuffer(buffer.buffer, `export_${Date.now()}.${c.container}`);
             },
-
-            downloadBuffer(buffer, filename) {
-                const blob = new Blob([buffer], { type: 'application/octet-stream' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = url;
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+            downloadBuffer(buf, name) {
+                const b = new Blob([buf], { type: 'application/octet-stream' }); const u = URL.createObjectURL(b);
+                const a = document.createElement('a'); a.style.display = 'none'; a.href = u; a.download = name;
+                document.body.appendChild(a); a.click(); setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(u); }, 100);
             }
         };
 
-        // --- MAIN APPLICATION STATE & UI ---
         const StudioApp = {
-            activeModule: 'math',
-            canvas: document.getElementById('preview-canvas'),
-            ctx: document.getElementById('preview-canvas').getContext('2d', { willReadFrequently: true }),
-            isExporting: false,
-            
-            init() {
-                this.bindEvents();
-                this.startRamMonitor();
-                this.updateCanvasSize();
-                this.updatePreviewFrame(0);
-                Logger.success("Studio Ready.");
-            },
-
+            activeModule: 'math', canvas: document.getElementById('preview-canvas'), ctx: document.getElementById('preview-canvas').getContext('2d', { willReadFrequently: true }), isExporting: false,
+            init() { this.bindEvents(); this.startRamMonitor(); this.updateCanvasSize(); Logger.info("Studio Ready."); },
             bindEvents() {
-                document.querySelectorAll('.tab').forEach(tab => {
-                    tab.addEventListener('click', (e) => {
-                        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                        document.querySelectorAll('.module-content').forEach(c => c.classList.remove('active'));
-                        e.target.classList.add('active');
-                        const target = e.target.getAttribute('data-target');
-                        document.getElementById(target).classList.add('active');
-                        this.activeModule = target.split('-')[1];
-                        this.updatePreviewFrame(0);
-                    });
-                });
-
-                document.getElementById('svg-upload').addEventListener('change', e => {
-                    const file = e.target.files[0];
-                    if(file) {
-                        document.getElementById('svg-status').value = file.name;
-                        SVGEngine.load(file).then(() => this.updatePreviewFrame(0)).catch(err => Logger.error(err));
-                    }
-                });
-
-                document.getElementById('video-upload').addEventListener('change', e => {
-                    const file = e.target.files[0];
-                    if(file) {
-                        document.getElementById('video-status').value = file.name;
-                        VideoEngine.load(file).catch(err => Logger.error(err));
-                    }
-                });
-
+                document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', (e) => {
+                    document.querySelectorAll('.tab, .module-content').forEach(el => el.classList.remove('active'));
+                    e.target.classList.add('active'); const tgt = e.target.getAttribute('data-target');
+                    document.getElementById(tgt).classList.add('active'); this.activeModule = tgt.split('-')[1]; this.updatePreviewFrame(0);
+                }));
+                document.getElementById('svg-upload').addEventListener('change', e => { if(e.target.files[0]) { document.getElementById('svg-status').value = e.target.files[0].name; SVGEngine.load(e.target.files[0]).then(()=>this.updatePreviewFrame(0)); } });
+                document.getElementById('video-upload').addEventListener('change', e => { if(e.target.files[0]) { document.getElementById('video-status').value = e.target.files[0].name; VideoEngine.load(e.target.files[0]); } });
                 document.getElementById('btn-export').addEventListener('click', () => this.startExport());
-                
-                ['math-pattern', 'math-palette', 'math-seed', 'math-complexity', 'math-symmetry', 'export-alpha'].forEach(id => {
-                    document.getElementById(id).addEventListener('change', () => this.updatePreviewFrame(0));
-                });
+                ['math-pattern', 'math-palette', 'math-seed', 'math-complexity', 'math-symmetry', 'export-alpha'].forEach(id => document.getElementById(id).addEventListener('change', () => this.updatePreviewFrame(0)));
             },
-
             getExportConfig() {
-                const res = document.getElementById('export-resolution').value.split('x');
-                const codecSelect = document.getElementById('export-codec');
-                const alphaMode = document.getElementById('export-alpha').value;
-                const container = codecSelect.options[codecSelect.selectedIndex].dataset.container;
-                
-                if(alphaMode === 'keep' && container !== 'webm') {
-                    throw new Error("Alpha channel export requires VP9 (WebM) codec. Switch container or select Discard Alpha.");
-                }
-
-                return {
-                    width: parseInt(res[0]),
-                    height: parseInt(res[1]),
-                    fps: parseInt(document.getElementById('export-fps').value),
-                    duration: parseInt(document.getElementById('export-duration').value),
-                    codec: codecSelect.value,
-                    bitrate: parseInt(document.getElementById('export-bitrate').value),
-                    container: container,
-                    alpha: alphaMode,
-                    mode: this.activeModule,
-                    
-                    math: {
-                        pattern: document.getElementById('math-pattern').value,
-                        complexity: parseInt(document.getElementById('math-complexity').value),
-                        symmetry: parseInt(document.getElementById('math-symmetry').value),
-                        palette: document.getElementById('math-palette').value,
-                        seed: parseInt(document.getElementById('math-seed').value),
-                        alpha: alphaMode
-                    },
-                    
-                    video: {
-                        scaling: document.getElementById('video-scaling').value
-                    }
-                };
+                const res = document.getElementById('export-resolution').value.split('x'), cs = document.getElementById('export-codec'), aM = document.getElementById('export-alpha'), c = cs.options[cs.selectedIndex].dataset.container;
+                if(aM === 'keep' && c !== 'webm') throw new Error("Alpha export requires VP9 (WebM).");
+                return { width: +res[0], height: +res[1], fps: +document.getElementById('export-fps').value, duration: +document.getElementById('export-duration').value, codec: cs.value, bitrate: +document.getElementById('export-bitrate').value, container: c, alpha: aM, mode: this.activeModule, math: { pattern: document.getElementById('math-pattern').value, complexity: +document.getElementById('math-complexity').value, symmetry: +document.getElementById('math-symmetry').value, palette: document.getElementById('math-palette').value, seed: +document.getElementById('math-seed').value, alpha: aM }, video: { scaling: document.getElementById('video-scaling').value } };
             },
-
-            updateCanvasSize() {
-                const res = document.getElementById('export-resolution').value.split('x');
-                this.canvas.width = parseInt(res[0]);
-                this.canvas.height = parseInt(res[1]);
-                this.updatePreviewFrame(0);
-            },
-
-            async updatePreviewFrame(timeInSeconds) {
+            updateCanvasSize() { const res = document.getElementById('export-resolution').value.split('x'); this.canvas.width = +res[0]; this.canvas.height = +res[1]; this.updatePreviewFrame(0); },
+            async updatePreviewFrame(t) {
                 if(this.isExporting) return;
                 try {
-                    const config = this.getExportConfig();
-                    
-                    if(this.activeModule === 'math') {
-                        MathEngine.drawFrame(this.ctx, config.width, config.height, timeInSeconds, config.math);
-                    } 
-                    else if(this.activeModule === 'svg') {
-                        if(config.alpha === 'discard') {
-                            this.ctx.fillStyle = '#000000';
-                            this.ctx.fillRect(0,0,config.width, config.height);
-                        } else {
-                            this.ctx.clearRect(0,0,config.width, config.height);
-                        }
-                        await SVGEngine.drawFrame(this.ctx, config.width, config.height, timeInSeconds);
-                    }
-                    else if(this.activeModule === 'video') {
-                        this.ctx.fillStyle = '#111';
-                        this.ctx.fillRect(0, 0, config.width, config.height);
-                        this.ctx.fillStyle = '#fff';
-                        this.ctx.font = '20px sans-serif';
-                        this.ctx.fillText('Video transcode preview unavailable.', 20, 40);
-                    }
-                } catch(e) {
-                    // Fail preview silently if user hasn't uploaded necessary files yet
-                }
+                    const c = this.getExportConfig();
+                    if(this.activeModule === 'math') MathEngine.drawFrame(this.ctx, c.width, c.height, t, c.math);
+                    else if(this.activeModule === 'svg') { if(c.alpha === 'discard') { this.ctx.fillStyle = '#000'; this.ctx.fillRect(0,0,c.width, c.height); } else this.ctx.clearRect(0,0,c.width, c.height); await SVGEngine.drawFrame(this.ctx, c.width, c.height, t); }
+                    else if(this.activeModule === 'video') { this.ctx.fillStyle = '#111'; this.ctx.fillRect(0,0,c.width,c.height); this.ctx.fillStyle = '#fff'; this.ctx.fillText('Video preview unavailable.', 20, 40); }
+                } catch(e) {}
             },
-
             async startExport() {
                 if(this.isExporting) return;
-                
                 try {
-                    const config = this.getExportConfig();
-                    this.isExporting = true;
-                    document.getElementById('btn-export').innerText = "Exporting...";
-                    document.getElementById('btn-export').style.backgroundColor = "var(--danger)";
-                    this.updateProgress(0);
-                    
-                    let frameGenerator;
-                    const canvas = new OffscreenCanvas(config.width, config.height);
-                    const ctx = canvas.getContext('2d', { alpha: config.alpha === 'keep' });
-                    const totalFrames = config.duration * config.fps;
-
-                    if (this.activeModule === 'math') {
-                        frameGenerator = async function* () {
-                            for(let i = 0; i < totalFrames; i++) {
-                                MathEngine.drawFrame(ctx, config.width, config.height, i / config.fps, config.math);
-                                yield new VideoFrame(canvas, { timestamp: (i * 1000000) / config.fps });
-                            }
-                        };
-                    } 
-                    else if (this.activeModule === 'svg') {
-                        if(!SVGEngine.svgString) throw new Error("No SVG file uploaded.");
-                        frameGenerator = async function* () {
-                            for(let i = 0; i < totalFrames; i++) {
-                                if(config.alpha === 'discard') {
-                                    ctx.fillStyle = '#000000';
-                                    ctx.fillRect(0,0,config.width, config.height);
-                                } else {
-                                    ctx.clearRect(0,0,config.width, config.height);
-                                }
-                                await SVGEngine.drawFrame(ctx, config.width, config.height, i / config.fps);
-                                yield new VideoFrame(canvas, { timestamp: (i * 1000000) / config.fps });
-                            }
-                        };
-                    }
-                    else if (this.activeModule === 'video') {
-                        if(!VideoEngine.fileBuffer) throw new Error("No video file uploaded.");
-                        frameGenerator = async function* () {
-                            const gen = VideoEngine.extractFrames(config.width, config.height, config.video.scaling);
-                            for await (const frame of gen) {
-                                yield frame;
-                            }
-                        };
-                    }
-
-                    await EncoderPipeline.exportVideo(config, frameGenerator);
-
-                } catch (e) {
-                    Logger.error(`Export Failed: ${e.message}`);
-                } finally {
-                    this.isExporting = false;
-                    document.getElementById('btn-export').innerText = "Start Render";
-                    document.getElementById('btn-export').style.backgroundColor = "var(--primary)";
-                    this.updateProgress(0, "Ready");
-                    this.releaseMemory();
-                }
+                    const c = this.getExportConfig(); this.isExporting = true;
+                    document.getElementById('btn-export').innerText = "Exporting..."; document.getElementById('btn-export').style.backgroundColor = "var(--danger)"; this.updateProgress(0);
+                    let gen, cvs = new OffscreenCanvas(c.width, c.height), ctx = cvs.getContext('2d', { alpha: c.alpha === 'keep' }), tot = c.duration * c.fps;
+                    if (this.activeModule === 'math') gen = async function* () { for(let i=0; i<tot; i++){ MathEngine.drawFrame(ctx, c.width, c.height, i/c.fps, c.math); yield new VideoFrame(cvs, { timestamp: (i*1000000)/c.fps }); } };
+                    else if (this.activeModule === 'svg') { if(!SVGEngine.svgString) throw new Error("No SVG uploaded."); gen = async function* () { for(let i=0; i<tot; i++){ if(c.alpha==='discard'){ctx.fillStyle='#000';ctx.fillRect(0,0,c.width,c.height);}else ctx.clearRect(0,0,c.width,c.height); await SVGEngine.drawFrame(ctx, c.width, c.height, i/c.fps); yield new VideoFrame(cvs, { timestamp: (i*1000000)/c.fps }); } }; }
+                    else if (this.activeModule === 'video') { if(!VideoEngine.fileBuffer) throw new Error("No video uploaded."); gen = async function* () { const g = VideoEngine.extractFrames(c.width, c.height, c.video.scaling); for await (const f of g) yield f; }; }
+                    await EncoderPipeline.exportVideo(c, gen);
+                } catch (e) { Logger.error(`Export Failed: ${e.message}`); } 
+                finally { this.isExporting = false; document.getElementById('btn-export').innerText = "Start Render"; document.getElementById('btn-export').style.backgroundColor = "var(--primary)"; this.updateProgress(0, "Ready"); this.releaseMemory(); }
             },
-
-            updateProgress(pct, textOverride = null) {
-                const bar = document.getElementById('progress-bar');
-                const txt = document.getElementById('progress-text');
-                
-                if (textOverride) {
-                    txt.innerText = textOverride;
-                    bar.style.width = '0%';
-                } else if (pct === false) {
-                    txt.innerText = "Processing frames (Unknown Total)...";
-                    bar.style.width = '100%';
-                    bar.style.backgroundColor = 'var(--primary)';
-                } else {
-                    const p = Math.floor(pct * 100);
-                    txt.innerText = `Rendering: ${p}%`;
-                    bar.style.width = `${p}%`;
-                    bar.style.backgroundColor = 'var(--accent)';
-                }
+            updateProgress(pct, txtOverride = null) {
+                const bar = document.getElementById('progress-bar'), txt = document.getElementById('progress-text');
+                if (txtOverride) { txt.innerText = txtOverride; bar.style.width = '0%'; } 
+                else if (pct === false) { txt.innerText = "Processing..."; bar.style.width = '100%'; bar.style.backgroundColor = 'var(--primary)'; } 
+                else { const p = Math.floor(pct * 100); txt.innerText = `Rendering: ${p}%`; bar.style.width = `${p}%`; bar.style.backgroundColor = 'var(--accent)'; }
             },
-
-            startRamMonitor() {
-                setInterval(() => {
-                    if (performance && performance.memory) {
-                        const mb = (performance.memory.usedJSHeapSize / 1048576).toFixed(1);
-                        document.getElementById('ram-usage').innerText = `${mb} MB`;
-                    }
-                }, 2000);
-            },
-
-            releaseMemory() {
-                VideoEngine.frameQueue.forEach(f => {
-                    try { f.close(); } catch(e){}
-                });
-                VideoEngine.frameQueue = [];
-                if(window.gc) window.gc();
-                Logger.info("Garbage collection triggered / Memory buffers flushed.");
-            }
+            startRamMonitor() { setInterval(() => { if (performance?.memory) document.getElementById('ram-usage').innerText = `${(performance.memory.usedJSHeapSize / 1048576).toFixed(1)} MB`; }, 2000); },
+            releaseMemory() { VideoEngine.frameQueue.forEach(f => { try{f.close();}catch(e){} }); VideoEngine.frameQueue = []; if(window.gc) window.gc(); Logger.info("Memory flushed."); }
         };
 
         window.addEventListener('DOMContentLoaded', () => StudioApp.init());
